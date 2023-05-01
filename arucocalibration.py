@@ -29,17 +29,9 @@ detectorParams = aruco.DetectorParameters()
 camera = cv2.VideoCapture(0)
 ret, img = camera.read()
 
-with open('calibration.json') as f:
-    loadeddict = json.load(f)
-mtx = loadeddict.get('camera_matrix')
-dist = loadeddict.get('dist_coeff')
-mtx = np.array(mtx)
-dist = np.array(dist)
-
 ret, img = camera.read()
 img_gray = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
 h,  w = img_gray.shape[:2]
-newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
 
 pose_r, pose_t = [], []
 while True:
