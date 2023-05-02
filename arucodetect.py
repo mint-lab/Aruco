@@ -24,7 +24,7 @@ ARUCO_DICT = {
 #	"DICT_APRILTAG_36h11": cv2.aruco.DICT_APRILTAG_36h11
 }
 
-def aruco_display (corners, ids ,rejected, image):
+def aruco_display(corners, ids ,rejected, image):
     if len(corners) > 0:
         ids = ids.flatten()
 
@@ -52,7 +52,8 @@ def aruco_display (corners, ids ,rejected, image):
                 cv2.putText(image, "Origin",(topRight),cv2.FONT_ITALIC,1,(255,0,0),cv2.LINE_4)
                 cv2.putText(image, f'{topRight[0], topRight[1]}',(topRight[0]+10,topRight[1]+10),cv2.FONT_ITALIC,1,(255,0,0),cv2.LINE_4)
                 cv2.circle(image,(topRight),6,(255,0,0),-1)
-
+                return topRight
+        return None
 
 if __name__ == '__main__':
 
@@ -71,7 +72,7 @@ if __name__ == '__main__':
         img = cv2.resize(img,(width,height), interpolation=cv2.INTER_CUBIC)
         corners ,ids, rejected = detector.detectMarkers(img)
 
-        aruco_display(corners,ids,rejected,img)
+        origin_pixel = aruco_display(corners,ids,rejected,img)
         
         cv2.imshow("Result",img)
 

@@ -27,7 +27,7 @@ ARUCO_DICT = {
 
 marker_length = 0.099 # unit : m ... 50mm
 
-def camera_pose_estimation(corners,ids, matrix_coefficients, distortion_coefficients):
+def camera_pose_estimation(corners,ids, matrix_coefficients, distortion_coefficients, origin):
 
     """
     Estimate the camera pos in the World coordinates which the Origin is 
@@ -49,50 +49,29 @@ def camera_pose_estimation(corners,ids, matrix_coefficients, distortion_coeffici
     3) returned rvec and tvec is the camera pose in the 3D world coordinates
     
     """
-    # if ids is not None:
-    #     # Find the first captured id number
-    #     first_captured_id = int(ids[0])
-
-    #     # Calculate how far from the origin to compensate
-    #     dx, dy  = int(first_captured_id/5), first_captured_id%5
-
-    #     # Calculate the length of square
-    #     scale = norm(corners[0][0][0]-corners[0][0][1],2)
-
-    #     # Make compensate matrix to translate the corners from the first captured to the origin
-    #     compensate = np.array([[dx*scale, dy*scale],[dx*scale, dy*scale],[dx*scale, dy*scale],[dx*scale, dy*scale]])
-
-    #     # Calculate origin corner by substracting first captured corners and compensate matrix 
-    #     origin_corners= corners[0] - compensate
-        
-    #     # Get camera pose 
-    #     rvec, tvec, pts= aruco.estimatePoseSingleMarkers(origin_corners, marker_length, matrix_coefficients, distortion_coefficients)
-        
-    #     # Get estimated origin
-    #     origin = tuple(origin_corners[0][0])
-        
-    #     return rvec.flatten(), tvec.flatten(), origin
-    # elif ids[0] == 0:
-    #     # If first captured  ID is 0, you dont have to compensation step. Just estimate pose right away
-
-    #     rvec, tvec, pts= aruco.estimatePoseSingleMarkers(corners[0], marker_length, matrix_coefficients, distortion_coefficients)
-
-    #     origin = corners[0][0]
-    #     return rvec.flatten(), tvec.flatten(), origin
-    # elif ids is None:
-    #     return None, None, None 
     if ids is None:
-        return None, None, None 
-    elif [0] in ids:
-        index_id_zero = np.where(ids == 0)[0][0]
+        return None
+    
+    if ids is not None:
+        # Find the first captured id number
+        first_captured_id = int(ids[0])
+        real_length = 0.025 
         
-        corner_id_zero = corners[index_id_zero]
-        rvec, tvec, pts= aruco.estimatePoseSingleMarkers(corner_id_zero, marker_length, matrix_coefficients, distortion_coefficients)
+        # Get camera pose from first captured tag  
+        rvec, tvec, pts= aruco.estimatePoseSingleMarkers(corners[0], marker_length, matrix_coefficients, distortion_coefficients)
+        tvec = tvec[0].reshape((3,1))
+        R, jac = cv2.Rodrigues(rvec)
+        cam_pos = -R.T@tvec
+        cam_ori = R.T
+        # Move camera_position  
+        dx ,dy = int(first_captured_id/10), first_captured_id%10
+        move = np.array([[dx*real_length],
+                            [dy*real_length],
+                            [0]])
         
-        origin = corner_id_zero[0][0]
-        return rvec.flatten(), tvec.flatten(), origin
-    else:
-        return None, None, None 
+        origin_cam_pos = cam_pos + move 
+
+        return origin_cam_pos
     
     
     
@@ -142,21 +121,20 @@ while cap.isOpened():
 
     # Detect ArUco markers 
     corners ,ids, rejected = detector.detectMarkers(gray)    
-    
-    # recoginize Origin points and return camera pose and origin 
-    rvec,tvec, origin  = camera_pose_estimation(corners,ids, intrinsic_camera, dist)
 
-    print(rvec)
-    print(tvec)
     # visualize detected tags and origin
-    aruco_display(corners, ids, rejected, img)
+    origin_pixel = aruco_display(corners, ids, rejected, img)
+
+    # recoginize Origin points and return camera pose and origin 
+    cam_pos  = camera_pose_estimation(corners,ids, intrinsic_camera, dist, origin_pixel)
 
     # visualize origin 
-    if origin is not None:
-        cv2.putText(img,"Estimated Origin",(int(origin[0]),int(origin[1])),cv2.FONT_ITALIC,1,(255,100,0),cv2.LINE_8)
-        cv2.circle(img,(int(origin[0]),int(origin[1])),6,(255,100,0),-1)
-    else : 
-        cv2.putText(img,"Estimated Origin",(400,20),cv2.FONT_ITALIC,1,(255,100,0),cv2.LINE_8)
+    if cam_pos is not None:
+        pose_string = f'XYZ [{cam_pos[0][0]:.3f},{cam_pos[1][0]:.3f},{cam_pos[2][0]:.3f}]'
+        cv2.putText(img,pose_string,(5,16),cv2.FONT_ITALIC,1,(255,100,0),cv2.LINE_8)
+    elif cam_pos is None: 
+        cv2.putText(img,"Origin cannot be detected",(5,16),cv2.FONT_ITALIC,1,(255,100,0),cv2.LINE_8)
+        
     cv2.imshow("result" ,img) 
 
     key =cv2.waitKey(1) & 0xFF 
