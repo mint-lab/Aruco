@@ -48,7 +48,7 @@ int main(int argc, char** argv)
     // Init AruCo
     cv::Ptr<cv::aruco::Dictionary> arucoDict = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
 
-    cv::FileStorage fs("2023-05-03-23-11-22-camchain.yaml", cv::FileStorage::READ);
+    cv::FileStorage fs("/2023-05-03-23-11-22-camchain.yaml", cv::FileStorage::READ);
     cv::Mat K, dist;
     fs["cam0"]["intrinsics"] >> K;
     fs["cam0"]["distortion_coeffs"] >> dist;
@@ -89,7 +89,7 @@ int main(int argc, char** argv)
         else if (type == "board")
         {
             cv::Mat board = cv::Mat::zeros(cv::Size(1, 1), CV_8UC1); // Placeholder for the board configuration
-            cv::aruco::estimatePoseBoard(corners, ids, board, K, dist, rvecs, tvecs);
+            pos , ori = camera_pose_board(corners, ids, K, dist, arucoDict)
         }
 
         json ret;

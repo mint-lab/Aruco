@@ -15,14 +15,22 @@ poses = []
 orientations = []
 
 
-with open('pos.json','r') as f:
+with open('data/transforms.json','r') as f:
         json_pos= json.load(f)
+        
+        frames = json_pos["frames"]
 
-        poses = json_pos["poses"]
-        orientations = json_pos["orientations"]
+        poses = [ ]
+        for fr in frames:
+            tr = fr["transform_matrix"]
+            tr_np = np.array(tr)
+            ps = tr_np[:3,3:].ravel().tolist()
 
+            poses.append(ps)
 
-with open("2023-05-03-23-11-22-camchain.yaml", 'r') as f:
+       
+
+with open("metadata/2023-05-03-23-11-22-camchain.yaml", 'r') as f:
     data = {}
     data = yaml.load(f,Loader= yaml.FullLoader)
     intrin = data['cam0']['intrinsics']
@@ -43,7 +51,7 @@ def render_cam():
     # Point Origin 
     ax.scatter(0,0,0, c="r")
     ax.legend("O")
-
+    print(len(poses))
     #Draw camera poses
     for ori,pos in zip(orientations,poses):
         ax.scatter(pos[0],pos[1],pos[2],c='b')
