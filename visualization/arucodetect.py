@@ -1,5 +1,7 @@
 import cv2
 import cv2.aruco as aruco 
+import glob
+
 ARUCO_DICT = {
 	"DICT_4X4_50": cv2.aruco.DICT_4X4_50,
 	"DICT_4X4_100": cv2.aruco.DICT_4X4_100,
@@ -24,7 +26,7 @@ ARUCO_DICT = {
 #	"DICT_APRILTAG_36h11": cv2.aruco.DICT_APRILTAG_36h11
 }
 
-def aruco_display(corners, ids ,rejected, image):
+def aruco_display (corners, ids ,rejected, image):
     if len(corners) > 0:
         ids = ids.flatten()
 
@@ -52,8 +54,7 @@ def aruco_display(corners, ids ,rejected, image):
                 cv2.putText(image, "Origin",(topRight),cv2.FONT_ITALIC,1,(255,0,0),cv2.LINE_4)
                 cv2.putText(image, f'{topRight[0], topRight[1]}',(topRight[0]+10,topRight[1]+10),cv2.FONT_ITALIC,1,(255,0,0),cv2.LINE_4)
                 cv2.circle(image,(topRight),6,(255,0,0),-1)
-                return topRight
-        return None
+
 
 if __name__ == '__main__':
 
@@ -64,15 +65,20 @@ if __name__ == '__main__':
     web_cam = 0
     usb_camera = 2 
     cap = cv2.VideoCapture(usb_camera)
-    while cap.isOpened():
-        ret, img = cap.read()
+    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    images = sorted(glob.glob('output/images/d435i_imgs/*.png'))
+    print("estimation proceedings..")
+
+    for image in images:    
+        img = cv2.imread(image)
         h,w,_ = img.shape
         width = 1000
         height = int(width*(h/w))
         img = cv2.resize(img,(width,height), interpolation=cv2.INTER_CUBIC)
         corners ,ids, rejected = detector.detectMarkers(img)
-
-        origin_pixel = aruco_display(corners,ids,rejected,img)
+    
+        aruco_display(corners,ids,rejected,img)
         
         cv2.imshow("Result",img)
 
