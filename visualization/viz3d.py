@@ -39,14 +39,24 @@ def pyramid():
 if __name__ == "__main__":
 
         
-    with open('pos.json','r') as f:
+    
+    with open('data/transforms.json','r') as f:
             json_pos= json.load(f)
+            
+            frames = json_pos["frames"]
 
-            poses = json_pos["poses"]
-            orientations = json_pos["orientations"]
+            poses = []
+            orientations = []
+            for fr in frames:
+                tr = fr["transform_matrix"]
+                tr_np = np.array(tr)
+                ps = tr_np[:3,3:].ravel().tolist()
+                ori = tr_np[:3,:3].tolist()
+                
+                poses.append(ps)
+                orientations.append(ori)
 
-
-    with open("2023-05-03-23-11-22-camchain.yaml", 'r') as f:
+    with open("metadata/2023-05-03-23-11-22-camchain.yaml", 'r') as f:
         data = {}
         data = yaml.load(f,Loader= yaml.FullLoader)
         intrin = data['cam0']['intrinsics']
